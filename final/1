@@ -1,0 +1,89 @@
+import boto3
+import sys
+from datetime import datetime, timedelta
+
+Request_Date = "6 2020"
+Req_Mon, Req_Yrs = Request_Date.split()
+Current_Date = datetime.now()
+
+
+if int(Req_Mon) == int(Current_Date.month):
+   print("months are same")
+else:
+   print("months are not same")
+
+
+
+"""
+print(Req_Mon)
+print(Req_Yrs)
+print(Current_Date.month)
+print(Current_Date.year)
+print(Current_Date.day)
+print(starttime)
+print(endtime)
+"""
+
+def numberOfDays(y, m):
+    leap = 0
+    if y% 400 == 0:
+         leap = 1
+    elif y % 100 == 0:
+         leap = 0
+    elif y% 4 == 0:
+         leap = 1
+    if m==2:
+         return 28 + leap
+    list = [1,3,5,7,8,10,12]
+    if m in list:
+         return 31
+    return 30
+#numberOfDays(int(Req_Yrs), int(Req_Mon))
+
+
+if int(Req_Mon) == int(Current_Date.month):
+   starttime = datetime(int(Req_Yrs), int(Req_Mon), 01)
+   endtime = datetime.now()
+else:
+   starttime = datetime(int(Req_Yrs), int(Req_Mon), 1)
+   endtime = datetime(int(Req_Yrs), int(Req_Mon), numberOfDays(int(Req_Yrs), int(Req_Mon)))
+
+
+client = boto3.client('cloudwatch')
+response = client.get_metric_statistics(
+    Namespace='AWS/RDS',
+    MetricName='CPUUtilization',
+    Dimensions=[
+                {
+                'Name': 'DBInstanceIdentifier',
+                'Value': 'database-1-instance-1'
+                },
+            ],
+    StartTime=starttime - timedelta(seconds=600),
+    EndTime=endtime,
+    #StartTime=datetime(2020, 6, 01) - timedelta(seconds=600),
+    #EndTime=datetime(2020, 6, 30),
+    Period=86400,
+    Statistics=[
+                'Average',
+            ],
+    Unit='Percent'
+        )
+
+
+print( type(sum(response['Datapoints'])) )
+print( type(len(response['Datapoints'])) )
+
+
+def Average(lst):
+    Sum = sum(lst)
+    Len = len(lst) 
+    return Sum / Len
+
+#average = Average(response['Datapoints'])
+
+#print(average)
+print( len(response['Datapoints']) )
+for cpu in response['Datapoints']:
+  if 'Average' in cpu:
+       print( cpu['Average'] )
